@@ -37,7 +37,7 @@ public class ListAppActivity extends BaseActivity implements OnItemClickListener
     public static final int GET_THIRD_APP = AppInfoTask.GET_THIRD_APP; // 第三方APP
     public static final int GET_SDCARD_APP = AppInfoTask.GET_SDCARD_APP; // SDCard的APP
     
-    private static String TAG = "APP_SIZE";
+    private static String TAG = "ListAppActivity";
     
     private int type = GET_LAUNCH_APP;
     
@@ -95,9 +95,9 @@ public class ListAppActivity extends BaseActivity implements OnItemClickListener
         switch (type) {
         case GET_LAUNCH_APP:
             Intent intent = new Intent();
-            Log.i("Test", "--------------------------");
-            Log.i("Test", "目标包名：" + appInfo.getPackageName());
-            Log.i("Test", "目标Activity名：" + appInfo.getLaunchActivityName());
+            Log.i(TAG, "--------------------------");
+            Log.i(TAG, "目标包名：" + appInfo.getPackageName());
+            Log.i(TAG, "目标Activity名：" + appInfo.getLaunchActivityName());
             intent.setComponent(new ComponentName(appInfo.getPackageName(), appInfo.getLaunchActivityName()));
             startActivity(intent);
             break;
