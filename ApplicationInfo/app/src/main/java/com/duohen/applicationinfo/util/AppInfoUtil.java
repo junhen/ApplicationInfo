@@ -18,31 +18,31 @@ import android.graphics.drawable.Drawable;
 import android.util.Log;
 
 /**
- * ��ȡ�ֻ��ϰ�װ������APP����Ϣ ���AppInfo��ʹ��
+ * 获取手机上安装的所有APP的信息 配合AppInfo类使用
  */
 public class AppInfoUtil {
-    public static final int GET_ALL_APP = 0; // ����APP
-    public static final int GET_SYSTEM_APP = 1; // ϵͳԤװAPP
-    public static final int GET_THIRD_APP = 2; // ������APP
-    public static final int GET_SDCARD_APP = 3; // SDCard��APP
+    public static final int GET_ALL_APP = 0; // 所有APP
+    public static final int GET_SYSTEM_APP = 1; // 系统预装APP
+    public static final int GET_THIRD_APP = 2; // 第三方APP
+    public static final int GET_SDCARD_APP = 3; // SDCard的APP
 
     private static AppInfoUtil infoUtil;
 
     private PackageManager pManager;
 
-    // ����Ӧ��
+    // 所有应用
     private List<PackageInfo> allPackageList;
 
-    // ɸѡ���
+    // 筛选结果
     private List<PackageInfo> result;
 
-    /** ˽�й����� **/
+    /** 私有构造器 **/
     private AppInfoUtil(Context context) {
         pManager = context.getPackageManager();
         result = new ArrayList<PackageInfo>();
     }
 
-    /** ���� **/
+    /** 单例 **/
     public static AppInfoUtil getInstance(Context context) {
         if (infoUtil == null) {
             infoUtil = new AppInfoUtil(context);
@@ -50,60 +50,60 @@ public class AppInfoUtil {
         return infoUtil;
     }
 
-    /** ��ȡ�Ѱ�װ��APP **/
+    /** 获取已安装的APP **/
     public List<AppInfo> getInstalledApps(int type) {
-        // 0 ��ʾ�������κβ�����������������������
-        // �汾�š�APPȨ��ֻ��ͨ��PackageInfo��ȡ�������ﲻʹ��getInstalledApplications()����
+        // 0 表示不接受任何参数。其他参数都带有限制
+        // 版本号、APP权限只能通过PackageInfo获取，故这里不使用getInstalledApplications()方法
         allPackageList = pManager.getInstalledPackages(0);
         if (allPackageList == null) {
-            Log.e("AppInfoUtil��", "getInstalledApps()�����е�allPackageListΪ��");
+            Log.e("AppInfoUtil类", "getInstalledApps()方法中的allPackageList为空");
             return null;
         }
-        // ����APP������
+        // 根据APP名排序
         Collections.sort(allPackageList, new PackageInfoComparator(pManager));
-        // ɸѡ
+        // 筛选
         result.clear();
         switch (type) {
-        case GET_ALL_APP:
-            result = allPackageList;
-            break;
-        case GET_SYSTEM_APP: // ϵͳ�Դ�APP
-            for (PackageInfo info : allPackageList) {
-                // FLAG_SYSTEM = 1<<0��if set, this application is installed in
-                // the device's system image.
-                // ����&���������ֽ����
-                // 1����flags��ĩλΪ1����ϵͳAPP
-                // 0����flags��ĩλΪ0������ϵͳAPP
-                if ((info.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 1) {
-                    result.add(info);
+            case GET_ALL_APP:
+                result = allPackageList;
+                break;
+            case GET_SYSTEM_APP: // 系统自带APP
+                for (PackageInfo info : allPackageList) {
+                    // FLAG_SYSTEM = 1<<0，if set, this application is installed in
+                    // the device's system image.
+                    // 下面&运算有两种结果：
+                    // 1，则flags的末位为1，即系统APP
+                    // 0，则flags的末位为0，即非系统APP
+                    if ((info.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 1) {
+                        result.add(info);
+                    }
                 }
-            }
-            break;
-        case GET_THIRD_APP: // ������APP
-            for (PackageInfo info : allPackageList) {
-                // FLAG_SYSTEM = 1<<0��ͬ��
-                if ((info.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
-                    result.add(info);
+                break;
+            case GET_THIRD_APP: // 第三方APP
+                for (PackageInfo info : allPackageList) {
+                    // FLAG_SYSTEM = 1<<0，同上
+                    if ((info.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+                        result.add(info);
+                    }
+                    // 本来是系统程序，被用户手动更新后，该系统程序也成为第三方应用程序了
+                    // FLAG_UPDATED_SYSTEM_APP = 1<<7， this is set if this
+                    // application has been
+                    // install as an update to a built-in system application.
+                    else if ((info.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) == 1) {
+                        result.add(info);
+                    }
                 }
-                // ������ϵͳ���򣬱��û��ֶ����º󣬸�ϵͳ����Ҳ��Ϊ������Ӧ�ó�����
-                // FLAG_UPDATED_SYSTEM_APP = 1<<7�� this is set if this
-                // application has been
-                // install as an update to a built-in system application.
-                else if ((info.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) == 1) {
-                    result.add(info);
+                break;
+            case GET_SDCARD_APP: // 安装在SDCard的应用程序
+                for (PackageInfo info : allPackageList) {
+                    // FLAG_EXTERNAL_STORAGE = 1<<18，Set to true if the application
+                    // is
+                    // currently installed on external/removable/unprotected storage
+                    if ((info.applicationInfo.flags & ApplicationInfo.FLAG_EXTERNAL_STORAGE) == 1) {
+                        result.add(info);
+                    }
                 }
-            }
-            break;
-        case GET_SDCARD_APP: // ��װ��SDCard��Ӧ�ó���
-            for (PackageInfo info : allPackageList) {
-                // FLAG_EXTERNAL_STORAGE = 1<<18��Set to true if the application
-                // is
-                // currently installed on external/removable/unprotected storage
-                if ((info.applicationInfo.flags & ApplicationInfo.FLAG_EXTERNAL_STORAGE) == 1) {
-                    result.add(info);
-                }
-            }
-            break;
+                break;
         }
         return getAppInfoByPackageInfo(result);
     }
@@ -111,29 +111,29 @@ public class AppInfoUtil {
     public List<AppInfo> getAppInfoByIntent(Intent intent) {
         List<ResolveInfo> resolveInfos = pManager.queryIntentActivities(intent,
                 PackageManager.GET_RESOLVED_FILTER);
-        // ����ϵͳ���� �� ����name����
-        // ������Ὣϵͳ�Դ�App���û���װ��APP�ֿ�����
+        // 调用系统排序 ， 根据name排序
+        // 此排序会将系统自带App与用户安装的APP分开排序
         Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(
                 pManager));
-        // // ������Ὣϵͳ�Դ�App���û���װ��APP�������
+        // // 此排序会将系统自带App与用户安装的APP混合排序
         // Collections.sort(resolveInfos, new DisplayNameComparator(pManager));
         return getAppInfobyResolveInfo(resolveInfos);
     }
 
-    /** ��ȡ����Appͼ�� **/
+    /** 获取单个App图标 **/
     public Drawable getAppIcon(String packageName) throws NameNotFoundException {
         Drawable icon = pManager.getApplicationIcon(packageName);
         return icon;
     }
 
-    /** ��ȡ����App���� **/
+    /** 获取单个App名称 **/
     public String getAppName(String packageName) throws NameNotFoundException {
         ApplicationInfo appInfo = pManager.getApplicationInfo(packageName, 0);
         String appName = pManager.getApplicationLabel(appInfo).toString();
         return appName;
     }
 
-    /** ��ȡ����App�汾�� **/
+    /** 获取单个App版本号 **/
     public String getAppVersion(String packageName)
             throws NameNotFoundException {
         PackageInfo packageInfo = pManager.getPackageInfo(packageName, 0);
@@ -141,7 +141,7 @@ public class AppInfoUtil {
         return appVersion;
     }
 
-    /** ��ȡ����App������Ȩ�� **/
+    /** 获取单个App的所有权限 **/
     public String[] getAppPermission(String packageName)
             throws NameNotFoundException {
         PackageInfo packageInfo = pManager.getPackageInfo(packageName,
@@ -150,7 +150,7 @@ public class AppInfoUtil {
         return permission;
     }
 
-    /** ��ȡ����App��ǩ�� **/
+    /** 获取单个App的签名 **/
     public String getAppSignature(String packageName)
             throws NameNotFoundException {
         PackageInfo packageInfo = pManager.getPackageInfo(packageName,
@@ -159,11 +159,11 @@ public class AppInfoUtil {
         return allSignature;
     }
 
-    // /** ʹ��ʾ�� **/
+    // /** 使用示例 **/
     // public static void main(String[] args) {
     // AppInfoUtil appInfoUtil = AppInfo.getInstance(context);
     //
-    // // ��ȡ����APP
+    // // 获取所有APP
     // List<AppInfo> allAppInfo = appInfoUtil.getInstalledApps(GET_ALL_APP);
     // for (AppInfo app : allAppInfo) {
     // String packageName = app.getPackageName();
@@ -171,31 +171,31 @@ public class AppInfoUtil {
     // Drawable icon = app.getIcon();
     // String versionName = app.getVersionName();
     // String[] permissions = app.getPermissions();
-    // // ���ɷ���...
+    // // 自由发挥...
     // }
     //
-    // // ��ȡ����APP����Ϣ
+    // // 获取单个APP的信息
     // String appName = appInfoUtil.getAppName(packageName);
     // ...
     // }
 
-    /** ��PackageInfo��List����ȡApp��Ϣ **/
+    /** 从PackageInfo的List中提取App信息 **/
     private List<AppInfo> getAppInfoByPackageInfo(List<PackageInfo> list) {
         List<AppInfo> appList = new ArrayList<AppInfo>();
         for (PackageInfo info : list) {
-            // ��ȡ��Ϣ
+            // 获取信息
             String packageName = info.applicationInfo.packageName;
             String appName = pManager.getApplicationLabel(info.applicationInfo)
                     .toString();
             Drawable icon = pManager.getApplicationIcon(info.applicationInfo);
-            // // Ҳ���������·�����ȡAPPͼ�꣬��Ȼ������
+            // // 也可以用如下方法获取APP图标，显然更烦琐
             // ApplicationInfo applicationInfo =
             // pManager.getApplicationInfo(packageName, 0);
             // Drawable icon = applicationInfo.loadIcon(pManager);
             String versionName = info.versionName;
             String[] permissions = info.requestedPermissions;
             String launchActivityName = getLaunchActivityName(packageName);
-            // ������Ϣ
+            // 储存信息
             AppInfo appInfo = new AppInfo();
             appInfo.setPackageName(packageName);
             appInfo.setAppName(appName);
@@ -208,7 +208,7 @@ public class AppInfoUtil {
         return appList;
     }
 
-    /** ��ResolveInfo��List����ȡApp��Ϣ **/
+    /** 从ResolveInfo的List中提取App信息 **/
     private List<AppInfo> getAppInfobyResolveInfo(List<ResolveInfo> list) {
         List<AppInfo> appList = new ArrayList<AppInfo>();
         for (ResolveInfo info : list) {
@@ -226,9 +226,9 @@ public class AppInfoUtil {
         return appList;
     }
 
-    /** ��ȡָ��������Activity�����������������а�������Activity **/
+    /** 获取指定包中主Activity的类名，并不是所有包都有主Activity **/
     private String getLaunchActivityName(String packageName) {
-        // ����PackageInfo����ȡ�������е���Activity������Intent
+        // 根据PackageInfo对象取不出其中的主Activity，须用Intent
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.setPackage(packageName);
         List<ResolveInfo> resolveInfos = pManager.queryIntentActivities(intent,
@@ -240,7 +240,7 @@ public class AppInfoUtil {
         return mainActivityName;
     }
 
-    /** �˱Ƚ���ֱ�Ӹ���AndroidԴ�룬����ȴ���԰�ϵͳAPP���û�APP������У��ν⣿ **/
+    /** 此比较器直接复制Android源码，但是却可以把系统APP与用户APP混合排列，何解？ **/
     private static class DisplayNameComparator implements
             Comparator<ResolveInfo> {
         public DisplayNameComparator(PackageManager pm) {
@@ -261,7 +261,7 @@ public class AppInfoUtil {
         private PackageManager mPM;
     }
 
-    /** �Զ����PackageInfo������ **/
+    /** 自定义的PackageInfo排序器 **/
     private static class PackageInfoComparator implements
             Comparator<PackageInfo> {
         public PackageInfoComparator(PackageManager pm) {

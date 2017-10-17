@@ -1,24 +1,23 @@
 package com.duohen.applicationinfo.model;
 
 import android.graphics.drawable.Drawable;
-
 /**
- * App��Ϣ��
+ * App信息类
  */
 public class AppInfo {
-    // ����
+    // 包名
     private String packageName;
-    // APP��
+    // APP名
     private String appName;
-    // ͼ��
+    // 图标
     private Drawable icon;
-    // �汾��
+    // 版本号
     private String versionName;
-    // Ȩ��
+    // 权限
     private String[] permissions;
-    // ��Activity������
-    private String launchActivityName; 
-    
+    // 主Activity的类名
+    private String launchActivityName;
+
     public String getLaunchActivityName() {
         return launchActivityName;
     }
@@ -68,6 +67,6 @@ public class AppInfo {
     public void setPermissions(String[] permissions) {
         this.permissions = permissions;
     };
-    
-    
+
+
 }
